@@ -7,10 +7,30 @@
 //
 
 import UIKit
+import Firebase
+import FirebaseAuth
 
 
+var generalEmail : String = ""
+
+class UserInformation {
+    
+    var email: String
+    var pwd: String
+    
+    init() {
+        self.email = ""
+        self.pwd = ""
+        
+    }
+}
 
 
+class loginStatus : NSObject {
+    var status = "initial"
+}
+
+var global = loginStatus()
 
 
 struct newUserInformation: Codable {
@@ -50,7 +70,9 @@ struct newUserInformation: Codable {
 class SignInViewController: UIViewController {
     
     
-    var responseStatus: String = ""
+    lazy var responseStatus: String = ""
+   
+    
     
     func displayMessage(userMessage:String) -> Void {
         DispatchQueue.main.async {
@@ -76,15 +98,24 @@ class SignInViewController: UIViewController {
         
         
 
-        
+         UIApplication.shared.isNetworkActivityIndicatorVisible = true
         print("sign in button is tapped")
+        generalEmail = userNameTextField.text!
         let userEmail = userNameTextField.text
         let userPassword = userPasswordTextField.text
         
-      
+        
+        
       //  instance.stringPassed = userEmail!
+        let UserMainTabBarController = storyboard?.instantiateViewController(withIdentifier: "UserMainTabBarController") as! UserMainTabBarController
+        
         let UserDataTableViewController = storyboard?.instantiateViewController(withIdentifier: "UserDataTableViewController") as! UserDataTableViewController
-        UserDataTableViewController.stringPassed = userEmail!
+    
+   
+       UserMainTabBarController.stringPassed = userEmail!
+     //  UserDataTableViewController.stringPassedEmail = userEmail!
+    //   UserDataTableViewController.stringPassed2 = userEmail!
+
        // navigationController?.pushViewController( UserDataTableViewController, animated: true)
       
         
@@ -120,7 +151,20 @@ class SignInViewController: UIViewController {
             do {
                 if let json = try JSONSerialization.jsonObject(with: data!, options:.allowFragments ) as? [String:Any] {
                     self.responseStatus = json["status"] as! String
-                 //      print("responseStatus in do catch 121 is" + self.responseStatus)
+ 
+                    global.status = self.responseStatus
+                    if self.responseStatus == ("Success") {
+                        let username:String = userEmail!
+                        let password:String = userPassword!
+                        
+                        let defaults = UserDefaults.standard
+                        
+                        defaults.set(username, forKey: "userEmail")
+                        defaults.set(password, forKey: "userPassword")
+                        
+                        self.saveLoggedState()
+                        self.successLogin()
+                    }
                     if (self.responseStatus != ("Success")){
                             if (self.responseStatus == ("noUserError")) {
                                 self.displayMessage(userMessage: "The user does not exist.")
@@ -139,13 +183,29 @@ class SignInViewController: UIViewController {
             
             
             /*JSON parse data ends*/
-            print("responseStatus out of do catch is " + self.responseStatus)
-           if (responseStatus == ("Success")){
+            print("responseStatus out of do catch is " + global.status)
+           if (responseStatus == ("Success") || global.status == ("Success")){
+         //   @IBAction func SaveAll(sender: AnyObject) {
+            
+        //    }
+            
             
             let UserDataTableViewController = self.storyboard?.instantiateViewController(withIdentifier: "UserDataTableViewController") as! UserDataTableViewController
-            UserDataTableViewController.stringPassed = userEmail!
-            self.present(UserDataTableViewController, animated: true)
-            self.navigationController?.pushViewController(UserDataTableViewController, animated: true)
+            let UserMainTabBarController   = self.storyboard?.instantiateViewController(withIdentifier: "UserMainTabBarController") as! UserMainTabBarController
+            let testTableVC = self.storyboard?.instantiateViewController(withIdentifier: "testTableVC") as! testTableVC
+        //    let GraphSubController = self.storyboard?.instantiateViewController(withIdentifier: "GraphSubController") as! GraphSubController
+         //   GraphSubController.graphStringPassed = userEmail!
+            
+            UserDataTableViewController.stringPassedEmail = userEmail!
+           UserMainTabBarController.stringPassed = userEmail!
+            testTableVC.stringPassedEmail = userEmail!
+            print("sign up pressed passing userEmail " + userEmail!)
+            
+          //  self.performSegue(withIdentifier: "UserDataTableViewController", sender: nil)
+            
+  
+            self.present(UserMainTabBarController, animated: true)
+          //  self.navigationController?.pushViewController(UserMainTabBarController, animated: true)
             
         
             /*direct to table ends*/
@@ -154,11 +214,26 @@ class SignInViewController: UIViewController {
         
         
         
+    
         
     
         
         
     }
+
+    
+    
+    
+    func successLogin() {
+        
+            OperationQueue.main.addOperation {
+               /* self.performSegue(withIdentifier: "UserMainTabBarController", sender: self)*/
+                 let UserMainTabBarController   = self.storyboard?.instantiateViewController(withIdentifier: "UserMainTabBarController") as! UserMainTabBarController
+                self.present(UserMainTabBarController, animated: true)
+            }
+        
+    }
+    
     
     @IBAction func registerButton(_ sender: Any) {
         print("register button is tapped")
@@ -167,7 +242,12 @@ class SignInViewController: UIViewController {
         self.present(registerViewController, animated: true)
     }
     
-
+    func saveLoggedState() {
+        let def = UserDefaults.standard
+        def.set(true, forKey: "is_authenticated") // save true flag to UserDefaults
+        def.synchronize()
+    }
+    
     
 override func viewDidLoad() {
         super.viewDidLoad()

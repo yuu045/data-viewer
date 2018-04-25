@@ -83,7 +83,7 @@ class RegisterViewController: UIViewController {
             
         }
         
-        let userPassword = passwordTextField.text
+        _ = passwordTextField.text
         
         
      //   func newUserReg (_ userPassword: String, completionHandler: @escaping(newUserInformation?, Error?) -> Void) {
@@ -139,7 +139,7 @@ class RegisterViewController: UIViewController {
             
             do {
                 if let json = try JSONSerialization.jsonObject(with: data!, options:.allowFragments ) as? [String:Any] {
-                    var status = json["status"] as! String
+                    let status = json["status"] as! String
                     
                //     self.responseStatus = json["status"] as! String
                     //      print("responseStatus in do catch 121 is" + self.responseStatus)

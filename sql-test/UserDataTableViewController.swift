@@ -9,9 +9,51 @@
 import UIKit
 
 
+//var refreshControl: UIRefreshControl!
+let defaults = UserDefaults.standard
+let username = defaults.string(forKey: "userEmail")
+
+var url = URL(string:"http://www.gmcmap.com/mobilehis.asp?email=" + username!)
+
 class UserDataTableViewController: UITableViewController {
-    var stringPassed : String?
+    var stringPassedEmail = ""
+    @IBOutlet weak var statusBar: UINavigationBar!
     
+    @IBOutlet weak var segmentControlTab: UISegmentedControl!
+    
+    @IBAction func segmentController(_ sender: Any) {
+       
+        switch segmentControlTab.selectedSegmentIndex
+        {
+        case 0:
+           // textLabel.text = "First Segment Selected";
+            UIApplication.shared.isNetworkActivityIndicatorVisible = true
+             url = URL(string:"http://www.gmcmap.com/mobilehis.asp?email=" + username!)
+            
+            parseJSON()
+            UIApplication.shared.isNetworkActivityIndicatorVisible = false
+            
+        case 1:
+          //  textLabel.text = "Second Segment Selected";
+            UIApplication.shared.isNetworkActivityIndicatorVisible = true
+            url = URL(string:"http://www.gmcmap.com/mobilehisthreshold.asp?email=" + username!)
+            parseJSON()
+            UIApplication.shared.isNetworkActivityIndicatorVisible = false
+           
+        default:
+            break
+        }
+    }
+    
+    
+   // @IBOutlet weak var statusBar: UINavigationBar!
+    
+   
+  
+    
+   
+  
+   // var stringPassed = "sda"
     func displayMessage(userMessage:String) -> Void {
         DispatchQueue.main.async {
             let alertController = UIAlertController(title: "Alert", message: userMessage, preferredStyle: .alert)
@@ -32,27 +74,65 @@ class UserDataTableViewController: UITableViewController {
     var timeArray = [String] ()
     override func viewDidLoad() {
         
-
+        
+       
         
         super.viewDidLoad()
-        parseJSON()
+         UIApplication.shared.isNetworkActivityIndicatorVisible = false
         
+      //  UIApplication.shared.isNetworkActivityIndicatorVisible = true
+        self.setNavBarToTheView()
+        
+    //    print(stringPassed2)
+     
+        
+         let SignInViewController = storyboard?.instantiateViewController(withIdentifier: "SignInViewController") as! SignInViewController
+      //  print("stringpassedEmail is " + username!)
+       statusBar.barTintColor = UIColor.white // Set any colour
+        
+        statusBar.isTranslucent = false
+        
+        statusBar.titleTextAttributes = [NSAttributedStringKey.foregroundColor:UIColor.black]
+        
+      /*  let barView = UIView(frame: CGRect(x:0, y:0, width:view.frame.width, height:UIApplication.shared.statusBarFrame.height - 10))
+        barView.backgroundColor = UIColor.white
+         
+        
+        view.addSubview(barView)*/
+       
         self.tableView.dataSource = self
         self.tableView.delegate = self
         
+        
+        
+        //hiding back button
+        let backButton = UIBarButtonItem(title: "", style: UIBarButtonItemStyle.plain, target: navigationController, action: nil)
+        navigationItem.leftBarButtonItem = backButton
+      
         // Do any additional setup after loading the view, typically from a nib.
+        
+        parseJSON()
+     //   UIApplication.shared.isNetworkActivityIndicatorVisible = false
     }
 
   /*  override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         self.tableView.contentInset = UIEdgeInsets(top: 108, left: 0, bottom: 0, right: 0)
     }*/
+    func setNavBarToTheView() {
+        self.statusBar.frame = CGRect(x: 0, y: 0, width: 320, height: 50)  // Here you can set you Width and Height for your navBar
+        self.statusBar.backgroundColor = (UIColor.white)
+        self.view.addSubview(statusBar)
+    }
     
     func parseJSON() {
      //   var ID = "64609518812"
-        print("the passed email is " + stringPassed!)
-        let url = URL(string:"http://www.gmcmap.com/service4.asp?ID="+stringPassed!)
-
+      
+        
+       //  let username = defaults.string(forKey: "userEmail")
+       //  print("the passed email is " + username!)
+      
+        UIApplication.shared.isNetworkActivityIndicatorVisible = true
         let task = URLSession.shared.dataTask(with: url!) {(data, response, error) in
             
             guard error == nil else {
@@ -72,126 +152,26 @@ class UserDataTableViewController: UITableViewController {
                 return
             }
             
-            if var CPMarray = json["CPM"] as? [String] {
+            if let CPMarray = json["CPM"] as? [String] {
                 self.tableArray = CPMarray
             }
-            if var timeArray = json["time"] as? [String] {
+            if let timeArray = json["time"] as? [String] {
                 self.timeArray = timeArray
             }
-            
+         //   UIApplication.shared.isNetworkActivityIndicatorVisible = false
          //  print(self.timeArray)
             
             DispatchQueue.main.async {
                 self.tableView.reloadData()
             }
-            
+            UIApplication.shared.isNetworkActivityIndicatorVisible = false
         }
+        
         
         task.resume()
         
     }
-   
-/** login starts
-     //  ViewController.swift
-     //  XcodeLoginExample
-     //
-     //  Created by Belal Khan on 29/05/17.
-     //  Copyright © 2017 Belal Khan. All rights reserved.
-     //
-     
-     import UIKit
-     import Alamofire
-     
-     class ViewController: UIViewController {
-     
-     //The login script url make sure to write the ip instead of localhost
-     //you can get the ip using ifconfig command in terminal
-     let URL_USER_LOGIN = "http://192.168.1.105/SimplifiediOS/v1/login.php"
-     
-     //the defaultvalues to store user data
-     let defaultValues = UserDefaults.standard
-     
-     //the connected views
-     //don't copy instead connect the views using assistant editor
-     @IBOutlet weak var labelMessage: UILabel!
-     @IBOutlet weak var textFieldUserName: UITextField!
-     @IBOutlet weak var textFieldPassword: UITextField!
-     
-     //the button action function
-     @IBAction func buttonLogin(_ sender: UIButton) {
-     
-     //getting the username and password
-     let parameters: Parameters=[
-     "username":textFieldUserName.text!,
-     "password":textFieldPassword.text!
-     ]
-     
-     //making a post request
-     Alamofire.request(URL_USER_LOGIN, method: .post, parameters: parameters).responseJSON
-     {
-     response in
-     //printing response
-     print(response)
-     
-     //getting the json value from the server
-     if let result = response.result.value {
-     let jsonData = result as! NSDictionary
-     
-     //if there is no error
-     if(!(jsonData.value(forKey: "error") as! Bool)){
-     
-     //getting the user from response
-     let user = jsonData.value(forKey: "user") as! NSDictionary
-     
-     //getting user values
-     let userId = user.value(forKey: "id") as! Int
-     let userName = user.value(forKey: "username") as! String
-     let userEmail = user.value(forKey: "email") as! String
-     let userPhone = user.value(forKey: "phone") as! String
-     
-     //saving user values to defaults
-     self.defaultValues.set(userId, forKey: "userid")
-     self.defaultValues.set(userName, forKey: "username")
-     self.defaultValues.set(userEmail, forKey: "useremail")
-     self.defaultValues.set(userPhone, forKey: "userphone")
-     
-     //switching the screen
-     let profileViewController = self.storyboard?.instantiateViewController(withIdentifier: "ProfileViewcontroller") as! ProfileViewController
-     self.navigationController?.pushViewController(profileViewController, animated: true)
-     
-     self.dismiss(animated: false, completion: nil)
-     }else{
-     //error message in case of invalid credential
-     self.labelMessage.text = "Invalid username or password"
-     }
-     }
-     }
-     }
-     
-     override func viewDidLoad() {
-     super.viewDidLoad()
-     //hiding the navigation button
-     let backButton = UIBarButtonItem(title: "", style: UIBarButtonItemStyle.plain, target: navigationController, action: nil)
-     navigationItem.leftBarButtonItem = backButton
-     
-     // Do any additional setup after loading the view, typically from a nib.
-     
-     //if user is already logged in switching to profile screen
-     if defaultValues.string(forKey: "username") != nil{
-     let profileViewController = self.storyboard?.instantiateViewController(withIdentifier: "ProfileViewcontroller") as! ProfileViewController
-     self.navigationController?.pushViewController(profileViewController, animated: true)
-     
-     }
-     }
-     
-     override func didReceiveMemoryWarning() {
-     super.didReceiveMemoryWarning()
-     // Dispose of any resources that can be recreated.
-     }
-     
-     
-     }
- **/ // login ends
+
        
 
     override func didReceiveMemoryWarning() {
@@ -207,8 +187,8 @@ extension UserDataTableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as UITableViewCell
         
-        cell.textLabel?.text = self.tableArray[indexPath.row]
-        cell.detailTextLabel?.text = self.timeArray[indexPath.row]
+        cell.textLabel?.text = self.tableArray[indexPath.row + 1]
+        cell.detailTextLabel?.text = self.timeArray[indexPath.row + 1]
         //  cell.tintColor = UIColor.red
         
         return cell
